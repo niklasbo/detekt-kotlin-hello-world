@@ -1,6 +1,9 @@
 MyRuleSet:
   MyRule:
     active: true
+MyRuleSetInSubmodule:
+  MyRuleInSubmodule:
+    active: true
 formatting:
   Indentation:
     active: true

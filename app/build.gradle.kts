@@ -8,6 +8,9 @@
 plugins {
     id("io.gitlab.arturbosch.detekt") version "1.23.3"
     id("org.jlleitschuh.gradle.ktlint") version "10.2.0"
+    id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+
+
     // Apply the org.jetbrains.kotlin.jvm Plugin to add support for Kotlin.
     alias(libs.plugins.jvm)
     // Apply the application plugin to add support for building a CLI application in Java.
@@ -18,6 +21,17 @@ repositories {
     // Use Maven Central for resolving dependencies.
     mavenCentral()
 }
+
+buildscript {
+    repositories {
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath("io.gitlab.arturbosch.detekt:detekt-gradle-plugin:1.23.3")
+    }
+}
+
+apply(plugin = "io.gitlab.arturbosch.detekt")
 
 /*
 buildscript {
@@ -35,8 +49,8 @@ dependencies {
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.3") //NB: added to use ktlint, this `detektPlugins` function is marked as error, but it is working!
     //option 1, direct jar file reference(s):
     detektPlugins(files("C:\\Users\\Niklas\\Programmierung\\detekt-custom-rule-template\\build\\libs\\detekt-custom-rule-1.0-SNAPSHOT.jar")) //NB: change the path to the built jar of the rule project
-    //option 2, subprojects / create a module and reference it here:
-    detektPlugins(project(":my-custom-rule-module-next-to-the-real-code"))
+    //option 2, subprojects / create a module and reference it here (not working!):
+    //detektPlugins(project(":detekt-custom-rule-in-submodule"))
     // root-project/
     // ├── app/
     // │   └── build.gradle.kts
@@ -51,8 +65,11 @@ dependencies {
 // Apply a specific Java toolchain to ease working on different environments.
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(20) //NB: detekt allows only jvm <=20
+        languageVersion = JavaLanguageVersion.of(19) //NB: detekt allows only jvm <=20
     }
+}
+kotlin {
+    jvmToolchain(19) // NB: set this to your local java version
 }
 
 application {
@@ -63,4 +80,23 @@ application {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+}
+
+detekt {
+    toolVersion = "1.23.3"
+    config.setFrom(file("config/detekt/detekt.yml"))
+    buildUponDefaultConfig = true
+}
+tasks.withType<Detekt>().configureEach {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+        txt.required.set(true)
+        sarif.required.set(true)
+        md.required.set(true)
+    }
+}
+
+subprojects {
+    apply(plugin = "io.gitlab.arturbosch.detekt")
 }
